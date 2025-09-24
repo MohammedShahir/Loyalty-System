@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Hairdresser') }}</title>
+    <title>أناقة ستور</title>
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -20,11 +20,11 @@
             <div class="flex h-16 items-center justify-between">
                 <a href="{{ url('/') }}" class="inline-flex items-center gap-3">
                     <img src="{{ asset('images/eleg.jpg') }}" alt="Logo" class="h-12 w-12 rounded" />
-                    <span class="font-semibold text-lg tracking-tight">{{ config('app.name', 'Hairdresser') }}</span>
+                    <span class="font-semibold text-lg tracking-tight">أناقة ستور</span>
                 </a>
 
                 <nav class="hidden md:flex items-center gap-6">
-                    <a href="#services"
+                    <a href="{{ route('calculating-points') }}"
                         class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">احتساب النقاط</a>
                     <a href="{{ route('add-hairdresser') }}"
                         class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">إضافة كوافير</a>

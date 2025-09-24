@@ -79,27 +79,6 @@
                             @endisset
                         </select>
                     </div>
-
-                    <div class="text-right">
-                        <label class="block text-sm font-medium text-slate-700 mb-1" for="Total_Sales">إجمالي
-                            المبيعات</label>
-                        <input id="Total_Sales" name="Total_Sales" type="number" step="0.01" min="0"
-                            placeholder="0.00"
-                            class="block w-full rounded-lg border-slate-300 focus:border-slate-500 focus:ring-slate-500 text-right" />
-                    </div>
-
-                    <div class="text-right">
-                        <label class="block text-sm font-medium text-slate-700 mb-1" for="Invoice_Num">رقم الفاتورة</label>
-                        <input id="Invoice_Num" name="Invoice_Num" type="number" min="0" placeholder="مثال: 1001"
-                            class="block w-full rounded-lg border-slate-300 focus:border-slate-500 focus:ring-slate-500 text-right" />
-                    </div>
-
-                    <div class="text-right">
-                        <label class="block text-sm font-medium text-slate-700 mb-1" for="Total_Points">إجمالي
-                            النقاط</label>
-                        <input id="Total_Points" name="Total_Points" type="number" min="0" placeholder="0"
-                            class="block w-full rounded-lg border-slate-300 focus:border-slate-500 focus:ring-slate-500 text-right" />
-                    </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
