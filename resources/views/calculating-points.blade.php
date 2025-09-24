@@ -1,10 +1,12 @@
 @extends('layouts.app')
 
+@section('title', 'احتساب النقاط | أناقة ستور')
+
 @section('content')
     <div class="max-w-4xl mx-auto" dir="rtl">
         <div class="mb-8 text-right">
             <h1 class="text-2xl font-semibold tracking-tight">احتساب النقاط</h1>
-            <p class="text-slate-600 mt-1">إضافة عملية بيع وتحديث نقاط الكوافير تلقائياً.</p>
+            <p class="text-slate-600 mt-1">إضافة عملية بيع وتحديث نقاط الكوافير تلقائياً</p>
         </div>
 
         @if (session('success'))
@@ -58,11 +60,11 @@
     </div>
 @endsection
 
-@section('extra')
+{{-- @section('extra')
     <div class="max-w-4xl mx-auto mt-10" dir="rtl">
         <div class="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 text-right">
             عند كل حفظ، يتم جمع إجمالي المبيعات لجميع فواتير الكوافير المختار ثم قسمة الإجمالي على 10 وتخزين الناتج (عدد
             صحيح) في خانة النقاط.
         </div>
     </div>
-@endsection
+@endsection --}}
