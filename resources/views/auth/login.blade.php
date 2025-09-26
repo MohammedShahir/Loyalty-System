@@ -1,7 +1,3 @@
-{{-- @extends('layouts.app')
-
-@section('title', 'تسجيل الدخول | أناقة ستور') --}}
-
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -10,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>تسجيل الدخول | أناقة ستور</title>
 
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="{{ asset('images/eleg.jpg') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
@@ -31,7 +27,6 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {{-- @yield('content') --}}
         <div class="max-w-md mx-auto" dir="rtl">
             <div class="text-right mb-6">
                 <h1 class="text-2xl font-semibold">تسجيل الدخول</h1>
