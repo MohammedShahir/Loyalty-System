@@ -24,7 +24,7 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1" for="Hairdresser_Id">اختيار
                             الكوافير</label>
                         <select id="Hairdresser_Id" name="Hairdresser_Id" required
-                            class="block w-full h-8 shadow-xs shadow-gray-500/50 rounded-md border-2 border-stone-200 focus:border-slate-500 focus:ring-slate-500 text-right">
+                            class="block w-full h-8 shadow-xs shadow-gray-500/50 rounded-md border-2 border-stone-200 focus:border-slate-500 focus:ring-slate-500">
                             <option value="" selected disabled>اختر الكوافير</option>
                             @isset($hairdressers)
                                 @foreach ($hairdressers as $h)
@@ -66,6 +66,7 @@
     <style>
         /* Make Tom Select match small input height */
         .ts-control {
+            display: flex;
             padding-top: 0.125rem;
             width: full;
         }

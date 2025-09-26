@@ -1,61 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# أناقة ستور — Hairdresser Loyalty System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is a small Laravel app to manage hairdressers, sales and a loyalty card system.
 
-## About Laravel
+Key features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+-   Add hairdressers and track sales
+-   Calculate and store loyalty points per hairdresser
+-   Assign cards to hairdressers; card release and expiration dates are managed
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Quick setup (Windows / XAMPP)
 
-## Learning Laravel
+1. Copy `.env.example` to `.env` and update DB credentials.
+2. Install PHP dependencies:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```powershell
+composer install
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+3. Install Node dependencies and build assets (optional for dev):
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```powershell
+npm install
+npm run dev
+```
 
-## Laravel Sponsors
+4. Generate app key and run migrations (if you prefer migrations over SQL dumps):
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```powershell
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+```
 
-### Premium Partners
+5. Start the local dev server:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```powershell
+php artisan serve
+```
 
-## Contributing
+Open http://127.0.0.1:8000 and log in with seeded users (if present).
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## Database notes
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+-   The project includes SQL dumps in `database/`:
 
-## Security Vulnerabilities
+    -   `hair.sql` — development dump
+    -   `loyalty-system.sql` — alternative dump
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+-   Cards behavior (Release & Expiration):
+    -   When a card is added, `Release_Date` should start from the time it is added and `Expiration_Date` should be exactly 1 year later.
+    -   Because some import tools (phpMyAdmin) don't accept `DELIMITER` blocks used to create triggers, the trigger creation is commented-out in the SQL dumps.
+    -   To create the trigger manually (mysql CLI), run:
 
-## License
+```sql
+DELIMITER //
+CREATE TRIGGER `cards_before_insert` BEFORE INSERT ON `cards`
+FOR EACH ROW
+BEGIN
+	IF NEW.Release_Date IS NULL THEN
+		SET NEW.Release_Date = CURRENT_TIMESTAMP;
+	END IF;
+	SET NEW.Expiration_Date = DATE_ADD(NEW.Release_Date, INTERVAL 1 YEAR);
+END;//
+DELIMITER ;
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+After creating the trigger you can insert cards without dates and the DB will set `Release_Date = NOW()` and `Expiration_Date = Release_Date + 1 YEAR`.
+
+If you prefer to avoid triggers, the application can set these dates in Laravel when creating cards — tell me and I can add that migration/controller logic.
+
+---
+
+## How to import the SQL dump (phpMyAdmin)
+
+1. Open phpMyAdmin and select your database.
+2. Import `database/hair.sql`. The trigger is commented out to avoid import errors.
+3. If you need the trigger, use the mysql CLI to run the `DELIMITER` block shown above.
+
+---
+
+## Development notes
+
+-   Tailwind CSS is used for styling. Vite is configured in `vite.config.js` and the main assets are in `resources/css` and `resources/js`.
+-   A searchable Tom Select dropdown was added to `resources/views/calculating-points.blade.php` for selecting hairdressers (no jQuery dependency).
+
+---
+
+## Next steps I can help with
+
+-   Convert DB trigger + update into a Laravel migration (best practice).
+-   Implement trigger-free behavior in Laravel: set Release_Date and Expiration_Date in the controller/model on card creation.
+-   Add AJAX-backed searchable select (server-side search) if you expect many hairdressers.
+
+---
+
+If you want any of the next steps implemented, tell me which and I'll add the migration or code changes.
