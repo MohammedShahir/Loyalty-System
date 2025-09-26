@@ -24,7 +24,7 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1" for="Hairdresser_Id">اختيار
                             الكوافير</label>
                         <select id="Hairdresser_Id" name="Hairdresser_Id" required
-                            class="block w-full h-8 pr-1.5 shadow-xs shadow-gray-500/50 rounded-md border-2 border-stone-200 focus:border-slate-500 focus:ring-slate-500 text-right">
+                            class="block w-full h-8 shadow-xs shadow-gray-500/50 rounded-md border-2 border-stone-200 focus:border-slate-500 focus:ring-slate-500 text-right">
                             <option value="" selected disabled>اختر الكوافير</option>
                             @isset($hairdressers)
                                 @foreach ($hairdressers as $h)
@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <a href="{{ url('/') }}"
+                    <a href="{{ route('control.index') }}"
                         class="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">إلغاء</a>
                     <button type="submit"
                         class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-slate-400">حفظ</button>
@@ -59,6 +59,44 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <!-- Tom Select (Tailwind-friendly) -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <style>
+        /* Make Tom Select match small input height */
+        .ts-control {
+            padding-top: 0.125rem;
+            width: full;
+        }
+
+        .ts-control:hover {
+            border: 2px solid black
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <!-- Tom Select JS (no jQuery) -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Tom Select on the hairdresser select
+            new TomSelect('#Hairdresser_Id', {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: 'اختر الكوافير',
+                dropdownDirection: 'auto',
+                onInitialize: function() {
+                    // Ensure the control looks like Tailwind small input
+                    const control = this.control_input ? this.control_input.closest('.ts-control') :
+                        null;
+                    if (control) control.style.height = '30px';
+                }
+            });
+        });
+    </script>
+@endpush
 
 {{-- @section('extra')
     <div class="max-w-4xl mx-auto mt-10" dir="rtl">
