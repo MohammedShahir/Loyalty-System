@@ -123,7 +123,7 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <a href="{{ url('/') }}"
+                    <a href="{{ route('control.index') }}"
                         class="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">إلغاء</a>
                     <button type="submit"
                         class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-black focus:outline-none focus:ring-2 focus:ring-slate-400">{{ isset($item) ? 'تحديث' : 'حفظ' }}</button>
