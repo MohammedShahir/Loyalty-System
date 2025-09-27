@@ -7,8 +7,8 @@ use App\Http\Controllers\ControlController;
 use App\Http\Controllers\AuthController;
 
 // Route::middleware('guest')->group(function () {
-    Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
+Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
 // });
 
 Route::middleware('auth')->group(function () {
@@ -24,4 +24,5 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/control', [ControlController::class, 'index'])->name('control.index');
     Route::delete('/control/{id}', [ControlController::class, 'destroy'])->name('control.destroy');
+    Route::get('/reports', [ControlController::class, 'reports'])->name('reports.index');
 });

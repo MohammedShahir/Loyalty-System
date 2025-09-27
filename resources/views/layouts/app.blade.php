@@ -31,6 +31,8 @@
                 </a>
 
                 <nav class="hidden md:flex items-center gap-6">
+                    <a href="{{ route('reports.index') }}"
+                        class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">التقارير</a>
                     <a href="{{ route('calculating-points') }}"
                         class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">احتساب النقاط</a>
                     <a href="{{ route('add-hairdresser') }}"
