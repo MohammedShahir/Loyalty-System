@@ -60,6 +60,8 @@
                     <tr>
                         <th class="px-4 py-3">#</th>
                         <th class="px-4 py-3">الاسم</th>
+                        <th class="px-4 py-3">تاريخ البطاقة</th>
+                        <th class="px-4 py-3">انتهاء البطاقة</th>
                         <th class="px-4 py-3">المالك</th>
                         <th class="px-4 py-3">الهاتف</th>
                         <th class="px-4 py-3">العنوان</th>
@@ -74,6 +76,20 @@
                         <tr class="border-t">
                             <td class="px-4 py-2">{{ $loop->iteration }}</td>
                             <td class="px-4 py-2">{{ $item->Hairdresser_Name }}</td>
+                            <td class="px-4 py-2">
+                                @if ($item->Release_Date)
+                                    {{ \Illuminate\Support\Carbon::parse($item->Release_Date)->format('Y-m-d') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="px-4 py-2">
+                                @if ($item->Expiration_Date)
+                                    {{ \Illuminate\Support\Carbon::parse($item->Expiration_Date)->format('Y-m-d') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td class="px-4 py-2">{{ $item->Hairdresser_Owner }}</td>
                             <td class="px-4 py-2">{{ $item->Call_Num }}</td>
                             <td class="px-4 py-2">{{ $item->Address }}</td>
@@ -103,10 +119,6 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
-
-        <div class="mt-4">
-            {{ $items->links() }}
         </div>
     </div>
 @endsection
