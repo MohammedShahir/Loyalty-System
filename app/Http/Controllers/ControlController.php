@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 use Illuminate\View\View;
 
 class ControlController extends Controller
@@ -16,6 +19,37 @@ class ControlController extends Controller
 
     public function index(Request $request): View
     {
+        // Backfill: for existing hairdressers that have a Type_of_Card but no hairdresser_cards row,
+        // create the assignment so reports and searches show card and dates.
+        try {
+            $missing = DB::table('hairdresser as h')
+                ->leftJoin('hairdresser_cards as hc', 'hc.hairdresser_id', '=', 'h.id')
+                ->where('h.Type_of_Card', '>', 0)
+                ->whereNull('hc.id')
+                ->select('h.id as hairdresser_id', 'h.Type_of_Card')
+                ->get();
+
+            if ($missing->isNotEmpty()) {
+                DB::beginTransaction();
+                foreach ($missing as $m) {
+                    $now = Carbon::now();
+                    DB::table('hairdresser_cards')->insert([
+                        'hairdresser_id' => $m->hairdresser_id,
+                        'card_id' => (int)$m->Type_of_Card,
+                        'Release_Date' => $now->toDateTimeString(),
+                        'Expiration_Date' => $now->copy()->addYear()->toDateTimeString(),
+                        'Is_Active' => 1,
+                        'Created_At' => $now->toDateTimeString(),
+                        'Updated_At' => $now->toDateTimeString(),
+                    ]);
+                }
+                DB::commit();
+            }
+        } catch (\Exception $e) {
+            // don't block the page on backfill errors; just continue
+            DB::rollBack();
+        }
+
         // include assigned card dates from hairdresser_cards (if any)
         $query = DB::table('hairdresser as h')
             ->leftJoin('hairdresser_cards as hc', 'hc.hairdresser_id', '=', 'h.id')
@@ -33,7 +67,10 @@ class ControlController extends Controller
         }
 
         if ($card = $request->input('card')) {
-            $query->where('Type_of_Card', (int) $card);
+            $query->where(function ($q2) use ($card) {
+                $q2->where('h.Type_of_Card', (int) $card)
+                    ->orWhere('hc.card_id', (int) $card);
+            });
         }
 
         $hairdressers = $query->orderBy('h.id', 'desc')->paginate(10)->withQueryString();
@@ -83,6 +120,7 @@ class ControlController extends Controller
                 'a.Activity_Name',
                 'h.Total_Points',
                 'c.Card_Name',
+                'hc.Release_Date',
                 'hc.Expiration_Date'
             )
             ->orderBy('h.Hairdresser_Name')
@@ -99,17 +137,135 @@ class ControlController extends Controller
             ->whereBetween('Expiration_Date', [DB::raw('CURRENT_DATE()'), DB::raw("DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY)")])
             ->count();
 
+        // invoices for selected hairdresser or by invoice search
+        $hairdressersList = DB::table('hairdresser')->select('id', 'Hairdresser_Name')->orderBy('Hairdresser_Name')->get();
+
+        $invoicesQuery = DB::table('sales as s')
+            ->leftJoin('hairdresser as h', 's.Hairdresser_Id', '=', 'h.id')
+            ->select('s.*', 'h.Hairdresser_Name')
+            ->orderByDesc('s.Sale_Date');
+
+        if ($hid = $request->input('hairdresser_id')) {
+            $invoicesQuery->where('s.Hairdresser_Id', (int)$hid);
+        }
+
+        if ($inv = $request->input('invoice')) {
+            $invoicesQuery->where('s.Invoice_Num', (int)$inv);
+        }
+
+        $invoices = $invoicesQuery->get();
+
         return view('reports', [
             'expiring' => $expiring,
             'points' => $points,
             'rows' => $rows,
             'expired_count' => $expired,
             'near_expiring_count' => $nearExpiring,
+            'hairdressersList' => $hairdressersList,
+            'invoices' => $invoices,
         ]);
     }
 
-    public function destroy(int $id): RedirectResponse
+    /**
+     * Server-side PDF of the reports page using dompdf. Make sure barryvdh/laravel-dompdf is installed
+     * and an Arabic font (e.g., Amiri-Regular.ttf) is placed in public/fonts and referenced in the view.
+     */
+    public function reportsPdf(Request $request)
     {
+        $data = [
+            'expiring' => DB::table('hairdresser_cards as hc')
+                ->join('hairdresser as h', 'hc.hairdresser_id', '=', 'h.id')
+                ->join('cards as c', 'hc.card_id', '=', 'c.id')
+                ->select('h.Hairdresser_Name', 'c.Card_Name', 'hc.Expiration_Date', DB::raw("DATEDIFF(hc.Expiration_Date, CURRENT_DATE()) as Days_Until_Expiry"))
+                ->orderBy('Days_Until_Expiry')
+                ->get(),
+            'rows' => DB::table('hairdresser as h')
+                ->leftJoin('hairdresser_cards as hc', 'hc.hairdresser_id', '=', 'h.id')
+                ->leftJoin('cards as c', 'hc.card_id', '=', 'c.id')
+                ->leftJoin('activity as a', 'h.Type_of_Activity', '=', 'a.id')
+                ->select('h.Hairdresser_Name', 'a.Activity_Name', 'h.Total_Points', 'c.Card_Name', 'hc.Release_Date', 'hc.Expiration_Date')
+                ->orderBy('h.Hairdresser_Name')
+                ->get(),
+        ];
+
+        // If the dompdf wrapper is bound (barryvdh/laravel-dompdf installed), use it to generate a PDF
+        if (app()->bound('dompdf.wrapper')) {
+            $pdf = app('dompdf.wrapper');
+            $pdf->loadView('reports_pdf', $data);
+            return $pdf->download('reports_ar.pdf');
+        }
+
+        // Fallback: return the HTML view so the user can save as PDF from the browser
+        return view('reports_pdf', $data);
+    }
+
+    /**
+     * Statistics dashboard
+     */
+    public function stats()
+    {
+        // Totals
+        $totalHairdressers = DB::table('hairdresser')->count();
+        $totalCards = DB::table('hairdresser_cards')->count();
+        $totalSales = DB::table('sales')->count();
+        $totalRevenue = DB::table('sales')->sum('Total_Sales');
+
+        // Expiring counts
+        $expired = DB::table('hairdresser_cards')->where('Expiration_Date', '<', DB::raw('CURRENT_DATE()'))->count();
+        $nearExpiring = DB::table('hairdresser_cards')->whereBetween('Expiration_Date', [DB::raw('CURRENT_DATE()'), DB::raw("DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY)")])->count();
+
+        // Top hairdressers by points
+        $top = DB::table('hairdresser')->select('Hairdresser_Name', 'Total_Points')->orderByDesc('Total_Points')->limit(8)->get();
+
+        // Monthly sales (last 12 months)
+        $monthly = DB::table('sales')
+            ->select(DB::raw("DATE_FORMAT(Sale_Date, '%Y-%m') as ym"), DB::raw('SUM(Total_Sales) as total'))
+            ->where('Sale_Date', '>=', DB::raw("DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL 11 MONTH),'%Y-%m-01')"))
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get();
+
+        return view('stats', [
+            'totalHairdressers' => $totalHairdressers,
+            'totalCards' => $totalCards,
+            'totalSales' => $totalSales,
+            'totalRevenue' => $totalRevenue,
+            'expired' => $expired,
+            'nearExpiring' => $nearExpiring,
+            'top' => $top,
+            'monthly' => $monthly,
+        ]);
+    }
+
+    /**
+     * AJAX endpoint: verify the current user's password. Returns JSON { ok: true }
+     */
+    public function confirmPassword(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['ok' => false, 'message' => 'غير مصرح'], 403);
+        }
+
+        if (Hash::check($request->input('password'), $user->password)) {
+            return response()->json(['ok' => true]);
+        }
+
+        return response()->json(['ok' => false, 'message' => 'كلمة المرور غير صحيحة'], 422);
+    }
+
+    public function destroy(Request $request, int $id): RedirectResponse
+    {
+        $password = $request->input('confirm_password');
+        $user = Auth::user();
+        if (! $user || ! Hash::check($password, $user->password)) {
+            return back()->withErrors(['password' => 'كلمة المرور غير صحيحة أو مفقودة']);
+        }
+
         DB::transaction(function () use ($id) {
             DB::table('sales')->where('Hairdresser_Id', $id)->delete();
             DB::table('hairdresser')->where('id', $id)->delete();

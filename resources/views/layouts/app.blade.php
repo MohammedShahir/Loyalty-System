@@ -25,7 +25,7 @@
         class="border-b border-slate-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
-                <a href="{{ route('control.index') }}" class="inline-flex items-center gap-3">
+                <a href="{{ route('reports.stats') }}" class="inline-flex items-center gap-3">
                     <img src="{{ asset('images/eleg.jpg') }}" alt="Logo" class="h-12 w-12 rounded" />
                     <span class="font-semibold text-lg tracking-tight">أناقة ستور</span>
                 </a>

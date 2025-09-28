@@ -6,6 +6,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class HairdresserController extends Controller
 {
@@ -47,6 +48,22 @@ class HairdresserController extends Controller
                 'Type_of_Card' => $validated['Type_of_Card'] ?? 0,
                 'Total_Points' => $validated['Total_Points'] ?? 0,
             ]);
+            // If a card type was selected, create/assign a hairdresser_cards record with Release_Date=now and Expiration_Date=+1 year
+            $cardType = $validated['Type_of_Card'] ?? 0;
+            if ($cardType && (int)$cardType > 0) {
+                $now = Carbon::now();
+                DB::table('hairdresser_cards')->updateOrInsert(
+                    ['hairdresser_id' => $hairdresserId],
+                    [
+                        'card_id' => (int)$cardType,
+                        'Release_Date' => $now->toDateTimeString(),
+                        'Expiration_Date' => $now->copy()->addYear()->toDateTimeString(),
+                        'Is_Active' => 1,
+                        'created_at' => $now->toDateTimeString(),
+                        'updated_at' => $now->toDateTimeString(),
+                    ]
+                );
+            }
 
             DB::table('sales')->insert([
                 'Invoice_Num' => $validated['Invoice_Num'] ?? 0,
@@ -89,6 +106,25 @@ class HairdresserController extends Controller
             'Type_of_Card' => $validated['Type_of_Card'] ?? 0,
             'Total_Points' => $validated['Total_Points'] ?? 0,
         ]);
+
+        // Manage hairdresser_cards assignment
+        $cardType = $validated['Type_of_Card'] ?? 0;
+        if ($cardType && (int)$cardType > 0) {
+            $now = Carbon::now();
+            DB::table('hairdresser_cards')->updateOrInsert(
+                ['hairdresser_id' => $id],
+                [
+                    'card_id' => (int)$cardType,
+                    'Release_Date' => $now->toDateTimeString(),
+                    'Expiration_Date' => $now->copy()->addYear()->toDateTimeString(),
+                    'Is_Active' => 1,
+                    'updated_at' => $now->toDateTimeString(),
+                ]
+            );
+        } else {
+            // if cardType is 0, mark assignment inactive
+            DB::table('hairdresser_cards')->where('hairdresser_id', $id)->update(['Is_Active' => 0]);
+        }
 
         return redirect()->route('control.index')->with('success', 'تم تحديث البيانات بنجاح');
     }
