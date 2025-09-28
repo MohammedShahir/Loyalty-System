@@ -95,19 +95,22 @@
                             <td class="px-4 py-2">{{ $item->Address }}</td>
                             <td class="px-4 py-2">
                                 {{ $activities->firstWhere('id', $item->Type_of_Activity)->Activity_Name ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ $cards->firstWhere('id', $item->Type_of_Card)->Card_Name ?? '-' }}
+                            <td class="px-4 py-2">
+                                {{ $cards->firstWhere('id', $item->Assigned_Card_Id ?? $item->Type_of_Card)->Card_Name ?? '-' }}
                             </td>
                             <td class="px-4 py-2">{{ $item->Total_Points }}</td>
                             <td class="px-4 py-2">
                                 <div class="flex gap-2 justify-end">
-                                    <a href="{{ route('hairdresser.edit', $item->id) }}"
-                                        class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium bg-amber-500 text-white hover:bg-amber-600">تعديل</a>
-                                    <form action="{{ route('control.destroy', $item->id) }}" method="POST"
-                                        onsubmit="return confirm('تأكيد الحذف؟');">
+                                    <button type="button" data-edit-url="{{ route('hairdresser.edit', $item->id) }}"
+                                        class="confirm-edit inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium bg-amber-500 text-white hover:bg-amber-600">تعديل</button>
+                                    <form id="delete-form-{{ $item->id }}"
+                                        action="{{ route('control.destroy', $item->id) }}" method="POST"
+                                        class="delete-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
-                                            class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium bg-rose-600 text-white hover:bg-rose-700">حذف</button>
+                                        <input type="hidden" name="confirm_password" value="" />
+                                        <button type="button" data-form-id="{{ $item->id }}"
+                                            class="confirm-delete inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium bg-rose-600 text-white hover:bg-rose-700">حذف</button>
                                     </form>
                                 </div>
                             </td>
@@ -122,3 +125,105 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <!-- Password confirmation modal -->
+    <div id="passwordModal" class="fixed inset-0 z-50 hidden bg-black/40 p-4">
+        <div class="w-full max-w-md bg-white rounded-lg p-6 mx-auto">
+            <h3 class="text-lg font-medium mb-3">تأكيد العملية</h3>
+            <p class="text-sm text-slate-600 mb-4">أدخل كلمة المرور لتأكيد الحذف.</p>
+            <div class="mb-3">
+                <input id="confirmPasswordInput" type="password" placeholder="كلمة المرور"
+                    class="w-full rounded-md border px-3 py-2" />
+                <div id="confirmError" class="text-sm text-rose-600 mt-2 hidden"></div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="cancelPwd" class="px-3 py-2 rounded-md border">إلغاء</button>
+                <button id="submitPwd" class="px-3 py-2 rounded-md bg-rose-600 text-white">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            let currentFormId = null;
+
+            document.querySelectorAll('.confirm-delete').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    currentFormId = this.getAttribute('data-form-id');
+                    // mark mode as delete
+                    const modal = document.getElementById('passwordModal');
+                    modal.dataset.mode = 'delete';
+                    document.getElementById('confirmPasswordInput').value = '';
+                    document.getElementById('confirmError').classList.add('hidden');
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex', 'items-center', 'justify-center');
+                });
+            });
+
+            // edit buttons
+            document.querySelectorAll('.confirm-edit').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    currentFormId = this.getAttribute('data-edit-url');
+                    const modal = document.getElementById('passwordModal');
+                    modal.dataset.mode = 'edit';
+                    document.getElementById('confirmPasswordInput').value = '';
+                    document.getElementById('confirmError').classList.add('hidden');
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex', 'items-center', 'justify-center');
+                });
+            });
+
+            document.getElementById('cancelPwd').addEventListener('click', function() {
+                const modal = document.getElementById('passwordModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex', 'items-center', 'justify-center');
+            });
+
+            document.getElementById('submitPwd').addEventListener('click', function() {
+                const pwd = document.getElementById('confirmPasswordInput').value;
+                if (!pwd) {
+                    const err = document.getElementById('confirmError');
+                    err.innerText = 'الرجاء إدخال كلمة المرور';
+                    err.classList.remove('hidden');
+                    return;
+                }
+
+                // send AJAX to verify
+                fetch("{{ route('confirm.password') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            password: pwd
+                        })
+                    }).then(res => res.json())
+                    .then(data => {
+                        if (data.ok) {
+                            const mode = document.getElementById('passwordModal').dataset.mode || 'delete';
+                            if (mode === 'delete') {
+                                const form = document.getElementById('delete-form-' + currentFormId);
+                                if (form) {
+                                    form.querySelector('input[name="confirm_password"]').value = pwd;
+                                    form.submit();
+                                }
+                            } else if (mode === 'edit') {
+                                // currentFormId contains the edit URL in this flow
+                                window.location.href = currentFormId;
+                            }
+                        } else {
+                            const err = document.getElementById('confirmError');
+                            err.innerText = data.message || 'كلمة المرور غير صحيحة';
+                            err.classList.remove('hidden');
+                        }
+                    }).catch(() => {
+                        const err = document.getElementById('confirmError');
+                        err.innerText = 'حدث خطأ في الاتصال';
+                        err.classList.remove('hidden');
+                    });
+            });
+        })();
+    </script>
+@endpush

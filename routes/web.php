@@ -24,5 +24,14 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/control', [ControlController::class, 'index'])->name('control.index');
     Route::delete('/control/{id}', [ControlController::class, 'destroy'])->name('control.destroy');
+    Route::post('/confirm-password', [ControlController::class, 'confirmPassword'])->name('confirm.password');
     Route::get('/reports', [ControlController::class, 'reports'])->name('reports.index');
+    // Server-side printable PDF (supports Arabic when dompdf + Arabic font installed)
+    Route::get('/reports/pdf', [ControlController::class, 'reportsPdf'])->name('reports.pdf');
+    // Statistics dashboard
+    Route::get('/stats', [ControlController::class, 'stats'])->name('reports.stats');
+    // Sales invoice management
+    Route::get('/sales/{id}/edit', [\App\Http\Controllers\SalesController::class, 'edit'])->name('sales.edit');
+    Route::put('/sales/{id}', [\App\Http\Controllers\SalesController::class, 'update'])->name('sales.update');
+    Route::delete('/sales/{id}', [\App\Http\Controllers\SalesController::class, 'destroy'])->name('sales.destroy');
 });
