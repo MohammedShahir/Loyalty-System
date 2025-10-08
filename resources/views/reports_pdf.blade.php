@@ -24,6 +24,18 @@
             margin-bottom: 12px;
         }
 
+        /* Scrollable container for on-screen previews. PDF generators often ignore overflow; for PDF exports
+           consider server-side pagination when many rows are expected. */
+        .table-container {
+            max-height: 360px;
+            /* adjust as needed */
+            overflow: auto;
+            border: 1px solid #e5e7eb;
+            padding: 6px;
+            margin-bottom: 14px;
+            background: #fff;
+        }
+
         th,
         td {
             border: 1px solid #ccc;
@@ -45,52 +57,56 @@
     <h1>تقرير البطاقات والنقاط</h1>
 
     <h2>البطاقات</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>الكوافير</th>
-                <th>البطاقة</th>
-                <th>تاريخ الانتهاء</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($expiring as $e)
+    <div class="table-container">
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ $e->Hairdresser_Name }}</td>
-                    <td>{{ $e->Card_Name }}</td>
-                    <td>{{ \Illuminate\Support\Carbon::parse($e->Expiration_Date)->format('Y-m-d') }}</td>
+                    <th>الكوافير</th>
+                    <th>البطاقة</th>
+                    <th>تاريخ الانتهاء</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($expiring as $e)
+                    <tr>
+                        <td>{{ $e->Hairdresser_Name }}</td>
+                        <td>{{ $e->Card_Name }}</td>
+                        <td>{{ \Illuminate\Support\Carbon::parse($e->Expiration_Date)->format('Y-m-d') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
     <h2>نقاط الكوافيرات</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>الكوافير</th>
-                <th>النشاط</th>
-                <th>النقاط</th>
-                <th>نوع البطاقة</th>
-                <th>تاريخ الإصدار</th>
-                <th>تاريخ الانتهاء</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($rows as $r)
+    <div class="table-container">
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ $r->Hairdresser_Name }}</td>
-                    <td>{{ $r->Activity_Name ?? '-' }}</td>
-                    <td>{{ $r->Total_Points }}</td>
-                    <td>{{ $r->Card_Name ?? '-' }}</td>
-                    <td>{{ $r->Release_Date ? \Illuminate\Support\Carbon::parse($r->Release_Date)->format('Y-m-d') : '-' }}
-                    </td>
-                    <td>{{ $r->Expiration_Date ? \Illuminate\Support\Carbon::parse($r->Expiration_Date)->format('Y-m-d') : '-' }}
-                    </td>
+                    <th>الكوافير</th>
+                    <th>النشاط</th>
+                    <th>النقاط</th>
+                    <th>نوع البطاقة</th>
+                    <th>تاريخ الإصدار</th>
+                    <th>تاريخ الانتهاء</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($rows as $r)
+                    <tr>
+                        <td>{{ $r->Hairdresser_Name }}</td>
+                        <td>{{ $r->Activity_Name ?? '-' }}</td>
+                        <td>{{ $r->Total_Points }}</td>
+                        <td>{{ $r->Card_Name ?? '-' }}</td>
+                        <td>{{ $r->Release_Date ? \Illuminate\Support\Carbon::parse($r->Release_Date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td>{{ $r->Expiration_Date ? \Illuminate\Support\Carbon::parse($r->Expiration_Date)->format('Y-m-d') : '-' }}
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </body>
 
 </html>

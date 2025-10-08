@@ -196,7 +196,8 @@ class ControlController extends Controller
     {
         // Totals
         $totalHairdressers = DB::table('hairdresser')->count();
-        $totalCards = DB::table('hairdresser_cards')->count();
+        // Count issued/personal cards instead of hairdresser_cards
+        $totalCards = DB::table('issued_cards')->count();
         $totalSales = DB::table('sales')->count();
         $totalRevenue = DB::table('sales')->sum('Total_Sales');
 
