@@ -103,12 +103,18 @@ class IssuedCardController extends Controller
                         DB::statement('CALL issue_card(?,?,?,@out_public_code)', [$hid, $cardId, null]);
                         $res = DB::select('SELECT @out_public_code as public_code');
                         $public = $res[0]->public_code ?? null;
-                        // Update issued_by if column exists
+                        // Update issued_by if column exists (defensive: log if update did not affect rows)
                         if ($public) {
                             try {
                                 $uid = Auth::id();
-                                if ($uid) DB::table('issued_cards')->where('public_code', $public)->update(['issued_by' => $uid]);
-                            } catch (\Exception $ignored) {
+                                if ($uid) {
+                                    $updated = DB::table('issued_cards')->where('public_code', $public)->update(['issued_by' => $uid]);
+                                    if ($updated === 0) {
+                                        Log::warning('issue_card: unable to set issued_by for public_code ' . $public . ' (no rows updated)');
+                                    }
+                                }
+                            } catch (\Exception $ex) {
+                                Log::warning('issue_card: failed to set issued_by for ' . $public . ': ' . $ex->getMessage());
                             }
                         }
                         if ($public) {
@@ -142,7 +148,9 @@ class IssuedCardController extends Controller
                     'public_code' => $public_code,
                     'code_hash' => $code_hash,
                     'salt' => $salt,
-                    'expires_at' => DB::raw("DATE_ADD(NOW(), INTERVAL 1 YEAR)")
+                    'expires_at' => DB::raw("DATE_ADD(NOW(), INTERVAL 1 YEAR)"),
+                    'issued_by' => Auth::id(),
+                    'issued_at' => now(),
                 ]);
 
                 $created[] = $public_code;
