@@ -77,15 +77,15 @@
                             <td class="px-4 py-2">{{ $loop->iteration }}</td>
                             <td class="px-4 py-2">{{ $item->Hairdresser_Name }}</td>
                             <td class="px-4 py-2">
-                                @if ($item->Release_Date)
-                                    {{ \Illuminate\Support\Carbon::parse($item->Release_Date)->format('Y-m-d') }}
+                                @if (!empty($item->Card_Issued_At))
+                                    {{ \Illuminate\Support\Carbon::parse($item->Card_Issued_At)->format('Y-m-d') }}
                                 @else
                                     -
                                 @endif
                             </td>
                             <td class="px-4 py-2">
-                                @if ($item->Expiration_Date)
-                                    {{ \Illuminate\Support\Carbon::parse($item->Expiration_Date)->format('Y-m-d') }}
+                                @if (!empty($item->Card_Issued_At))
+                                    {{ \Illuminate\Support\Carbon::parse($item->Card_Issued_At)->addYear()->format('Y-m-d') }}
                                 @else
                                     -
                                 @endif
@@ -96,7 +96,17 @@
                             <td class="px-4 py-2">
                                 {{ $activities->firstWhere('id', $item->Type_of_Activity)->Activity_Name ?? '-' }}</td>
                             <td class="px-4 py-2">
-                                {{ $cards->firstWhere('id', $item->Assigned_Card_Id ?? $item->Type_of_Card)->Card_Name ?? '-' }}
+                                @php
+                                    // Some rows may not have Assigned_Card_Id; avoid accessing undefined properties.
+                                    $cardName = null;
+                                    if (!empty($item->Card_Name)) {
+                                        $cardName = $item->Card_Name;
+                                    } elseif (isset($item->Assigned_Card_Id) && $item->Assigned_Card_Id) {
+                                        $found = $cards->firstWhere('id', $item->Assigned_Card_Id);
+                                        $cardName = $found->Card_Name ?? null;
+                                    }
+                                @endphp
+                                {{ $cardName ?? '-' }}
                             </td>
                             <td class="px-4 py-2">{{ $item->Total_Points }}</td>
                             <td class="px-4 py-2">

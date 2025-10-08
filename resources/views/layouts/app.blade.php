@@ -39,6 +39,12 @@
                         class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">إضافة كوافير</a>
                     <a href="{{ route('control.index') }}"
                         class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">البحث</a>
+                    <a href="{{ route('issued_cards.index') }}"
+                        class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">البطاقات</a>
+                    <a href="{{ route('issued_cards.create') }}"
+                        class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">إنشاء بطاقة</a>
+                    <a href="{{ route('issued_cards.verify.form') }}"
+                        class="text-sm font-medium text-slate-700 hover:text-slate-900 transition">التحقق</a>
                 </nav>
 
                 @auth
@@ -83,6 +89,13 @@
                 <a href="{{ route('add-hairdresser') }}"
                     class="block rounded px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100">إضافة
                     كوافير</a>
+                <a href="{{ route('issued_cards.index') }}"
+                    class="block rounded px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100">البطاقات</a>
+                <a href="{{ route('issued_cards.create') }}"
+                    class="block rounded px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100">إنشاء
+                    بطاقة</a>
+                <a href="{{ route('issued_cards.verify.form') }}"
+                    class="block rounded px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100">التحقق</a>
                 @auth
                     <button id="logoutBtnMobile"
                         class="w-full text-right block rounded px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-100">تسجيل
