@@ -19,41 +19,22 @@ class ControlController extends Controller
 
     public function index(Request $request): View
     {
-        // Backfill: for existing hairdressers that have a Type_of_Card but no hairdresser_cards row,
-        // create the assignment so reports and searches show card and dates.
-        try {
-            $missing = DB::table('hairdresser as h')
-                ->leftJoin('hairdresser_cards as hc', 'hc.hairdresser_id', '=', 'h.id')
-                ->where('h.Type_of_Card', '>', 0)
-                ->whereNull('hc.id')
-                ->select('h.id as hairdresser_id', 'h.Type_of_Card')
-                ->get();
+        // Note: legacy `Type_of_Card` usage removed. Card assignments are maintained in `hairdresser_cards` and
+        // via the Issued Cards flow.
 
-            if ($missing->isNotEmpty()) {
-                DB::beginTransaction();
-                foreach ($missing as $m) {
-                    $now = Carbon::now();
-                    DB::table('hairdresser_cards')->insert([
-                        'hairdresser_id' => $m->hairdresser_id,
-                        'card_id' => (int)$m->Type_of_Card,
-                        'Release_Date' => $now->toDateTimeString(),
-                        'Expiration_Date' => $now->copy()->addYear()->toDateTimeString(),
-                        'Is_Active' => 1,
-                        'Created_At' => $now->toDateTimeString(),
-                        'Updated_At' => $now->toDateTimeString(),
-                    ]);
-                }
-                DB::commit();
-            }
-        } catch (\Exception $e) {
-            // don't block the page on backfill errors; just continue
-            DB::rollBack();
-        }
+        // include latest non-revoked issued card (if any) so search shows issued card and dates
+        $lastIssued = DB::table('issued_cards')
+            ->select(DB::raw('MAX(id) as last_id'), 'hairdresser_id')
+            ->where('is_revoked', 0)
+            ->groupBy('hairdresser_id');
 
-        // include assigned card dates from hairdresser_cards (if any)
         $query = DB::table('hairdresser as h')
-            ->leftJoin('hairdresser_cards as hc', 'hc.hairdresser_id', '=', 'h.id')
-            ->select('h.*', 'hc.card_id as Assigned_Card_Id', 'hc.Release_Date', 'hc.Expiration_Date');
+            ->leftJoinSub($lastIssued, 'last_ic', function ($join) {
+                $join->on('last_ic.hairdresser_id', '=', 'h.id');
+            })
+            ->leftJoin('issued_cards as ic', 'ic.id', '=', 'last_ic.last_id')
+            ->leftJoin('cards as c', 'ic.card_id', '=', 'c.id')
+            ->select('h.*', 'c.Card_Name as Card_Name', 'ic.issued_at as Card_Issued_At');
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
@@ -67,9 +48,10 @@ class ControlController extends Controller
         }
 
         if ($card = $request->input('card')) {
+            // filter by assigned card (hairdresser_cards.card_id) or issued card
             $query->where(function ($q2) use ($card) {
-                $q2->where('h.Type_of_Card', (int) $card)
-                    ->orWhere('hc.card_id', (int) $card);
+                $q2->where('hc.card_id', (int) $card)
+                    ->orWhere('ic.card_id', (int) $card);
             });
         }
 
@@ -109,10 +91,19 @@ class ControlController extends Controller
             ->orderByDesc('Total_Points')
             ->get();
 
-        // Combined rows for the exportable report: hairdresser, activity, points, card, expiration
+        // Combined rows for the exportable report: hairdresser, activity, points, card from issued_cards (latest non-revoked), issue date
+        // Build a subquery that finds the latest non-revoked issued_cards.id per hairdresser
+        $lastIssued = DB::table('issued_cards')
+            ->select(DB::raw('MAX(id) as last_id'), 'hairdresser_id')
+            ->where('is_revoked', 0)
+            ->groupBy('hairdresser_id');
+
         $rows = DB::table('hairdresser as h')
-            ->leftJoin('hairdresser_cards as hc', 'hc.hairdresser_id', '=', 'h.id')
-            ->leftJoin('cards as c', 'hc.card_id', '=', 'c.id')
+            ->leftJoinSub($lastIssued, 'last_ic', function ($join) {
+                $join->on('last_ic.hairdresser_id', '=', 'h.id');
+            })
+            ->leftJoin('issued_cards as ic', 'ic.id', '=', 'last_ic.last_id')
+            ->leftJoin('cards as c', 'ic.card_id', '=', 'c.id')
             ->leftJoin('activity as a', 'h.Type_of_Activity', '=', 'a.id')
             ->select(
                 'h.id',
@@ -120,8 +111,7 @@ class ControlController extends Controller
                 'a.Activity_Name',
                 'h.Total_Points',
                 'c.Card_Name',
-                'hc.Release_Date',
-                'hc.Expiration_Date'
+                'ic.issued_at as Card_Issued_At'
             )
             ->orderBy('h.Hairdresser_Name')
             ->get();

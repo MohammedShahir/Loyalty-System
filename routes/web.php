@@ -30,6 +30,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/pdf', [ControlController::class, 'reportsPdf'])->name('reports.pdf');
     // Statistics dashboard
     Route::get('/stats', [ControlController::class, 'stats'])->name('reports.stats');
+
+    // Issued cards management (create personalized cards)
+    Route::get('/issued-cards/create', [\App\Http\Controllers\IssuedCardController::class, 'create'])->name('issued_cards.create');
+    Route::post('/issued-cards', [\App\Http\Controllers\IssuedCardController::class, 'store'])->name('issued_cards.store');
+    Route::get('/issued-cards', [\App\Http\Controllers\IssuedCardController::class, 'index'])->name('issued_cards.index');
+    Route::get('/issued-cards/verify', [\App\Http\Controllers\IssuedCardController::class, 'verifyForm'])->name('issued_cards.verify.form');
+    Route::post('/issued-cards/verify', [\App\Http\Controllers\IssuedCardController::class, 'verify'])->name('issued_cards.verify');
+    Route::post('/issued-cards/{public_code}/revoke', [\App\Http\Controllers\IssuedCardController::class, 'revoke'])->name('issued_cards.revoke');
+    Route::get('/issued-cards/{public_code}/audit', [\App\Http\Controllers\IssuedCardController::class, 'audit'])->name('issued_cards.audit');
+    Route::post('/issued-cards/{public_code}/undo-audit', [\App\Http\Controllers\IssuedCardController::class, 'undoAudit'])->name('issued_cards.undo_audit');
     // Sales invoice management
     Route::get('/sales/{id}/edit', [\App\Http\Controllers\SalesController::class, 'edit'])->name('sales.edit');
     Route::put('/sales/{id}', [\App\Http\Controllers\SalesController::class, 'update'])->name('sales.update');

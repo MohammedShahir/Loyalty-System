@@ -100,26 +100,7 @@
                         @enderror
                     </div>
 
-                    <div class="text-right">
-                        <label class="block text-sm font-medium text-slate-700 mb-1" for="Type_of_Card">نوع البطاقة</label>
-                        <select id="Type_of_Card" name="Type_of_Card"
-                            class="block w-full h-8 pr-1.5 shadow-xs shadow-gray-500/50 rounded-md border-2 border-stone-200 focus:border-slate-500 focus:ring-slate-500 text-right">
-                            <option value="" disabled
-                                {{ old('Type_of_Card', $item->Type_of_Card ?? '') === '' ? 'selected' : '' }}>اختر البطاقة
-                            </option>
-                            @isset($cards)
-                                @foreach ($cards as $card)
-                                    <option value="{{ $card->id }}"
-                                        {{ (string) old('Type_of_Card', $item->Type_of_Card ?? '') === (string) $card->id ? 'selected' : '' }}>
-                                        {{ $card->Card_Name }}
-                                    </option>
-                                @endforeach
-                            @endisset
-                        </select>
-                        @error('Type_of_Card')
-                            <div class="text-rose-600 text-xs mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
+                    <!-- Type_of_Card removed per request: card assignment/issuance is handled from the Issued Cards UI -->
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">

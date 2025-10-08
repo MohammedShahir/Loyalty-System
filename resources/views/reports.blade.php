@@ -80,10 +80,10 @@
                                     <td class="px-3 py-2">{{ $r->Total_Points }}</td>
                                     <td class="px-3 py-2">{{ $r->Card_Name ?? '-' }}</td>
                                     <td class="px-3 py-2">
-                                        {{ $r->Release_Date ? \Illuminate\Support\Carbon::parse($r->Release_Date)->format('Y-m-d') : '-' }}
+                                        {{ $r->Card_Issued_At ? \Illuminate\Support\Carbon::parse($r->Card_Issued_At)->format('Y-m-d') : '-' }}
                                     </td>
                                     <td class="px-3 py-2">
-                                        {{ $r->Expiration_Date ? \Illuminate\Support\Carbon::parse($r->Expiration_Date)->format('Y-m-d') : '-' }}
+                                        {{ $r->Card_Issued_At ? \Illuminate\Support\Carbon::parse($r->Card_Issued_At)->addYear()->format('Y-m-d') : '-' }}
                                     </td>
                                 </tr>
                             @endforeach
